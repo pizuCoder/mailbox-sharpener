@@ -15,7 +15,7 @@ export default function App() {
       <Route exact path="/welcome">
         <div style={{ padding: "1rem" }}>
           <Logout />
-          <h1>Welcome to Expense Tracker</h1>
+          <h1>Welcome to Your Mailbox</h1>
         </div>
       </Route>
       </Switch>
