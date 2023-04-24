@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { mailActions } from "../redux-store/mailSlice";
+import {  useSelector } from "react-redux";
 import { Editor } from "react-draft-wysiwyg";
 import { EditorState, convertToRaw } from "draft-js";
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
@@ -16,32 +15,41 @@ const ComposeEmail = () => {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [editorState, setEditorState] = useState(EditorState.createEmpty());
-  const dispatch = useDispatch();
-  const { email, token } = useSelector((state) => state.auth);
+  const { email } = useSelector((state) => state.auth);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const content = convertToRaw(editorState.getCurrentContent());
-    const body = JSON.stringify(content);
-    dispatch(mailActions.sendMail({ to, subject, body, email, token }));
+    const body = JSON.stringify(content.blocks[0].text);
 
     // Send a post request to store the email in the Realtime Firebase DB
     axios.post(
       `https://mailbox-sharpener-default-rtdb.firebaseio.com/${email.replace(
         /[.@]/g,
         ""
-      )}.json`,
+      )}/sentMails.json`,
       {
         to,
         subject,
         body,
-        email,
       }
-    );
+    ).catch((err) => console.log(err));
+    axios.post(
+      `https://mailbox-sharpener-default-rtdb.firebaseio.com/${to.replace(
+        /[.@]/g,
+        ""
+      )}/receivedMails.json`,
+      {
+        from: email,
+        subject,
+        body, 
+      }
+    ).catch((err) => console.log(err));
 
     setTo("");
     setSubject("");
     setEditorState(EditorState.createEmpty());
+    window.alert('Your Email was Sent!')
   };
 
   
