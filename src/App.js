@@ -7,6 +7,8 @@ import Logout from "./components/Auth/Logout";
 import ComposeEmail from "./components/mailbox/composeEmail";
 import  Button  from "react-bootstrap/Button";
 import Inbox from "./components/mailbox/inbox";
+import MailDeets from "./components/mailbox/mailDeets";
+// import SentMailDeets from "./components/mailbox/sentMailDeets";
 
 export default function App() {
   
@@ -24,9 +26,14 @@ export default function App() {
           <a href='/compose'> <Button>Compose email</Button></a>
           <div style={{padding: '1rem'}}>
           <Inbox />
+          
           </div>
         </div>
       </Route>
+      <Route exact path="/mail/:mailId" >
+        <MailDeets />
+      </Route>
+      
       <Route path='/compose' >
         <ComposeEmail />
       </Route>
