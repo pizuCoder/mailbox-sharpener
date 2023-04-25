@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { mailActions } from "../redux-store/mailSlice";
 import Tab from "react-bootstrap/Tab";
@@ -6,11 +6,6 @@ import Tabs from "react-bootstrap/Tabs";
 import Button from "react-bootstrap/Button";
 import Table from "react-bootstrap/Table";
 import Badge from "react-bootstrap/Badge";
-
-// import "./inbox.css"
-
-// import ReceiverMailDeets from "./mailDeets";
-// import SentMailDeets from "./sentMailDeets";
 
 import { useHistory } from "react-router-dom";
 
@@ -20,8 +15,12 @@ const Inbox = () => {
   const email = useSelector((state) => state.auth.email);
   const receivedMails = useSelector((state) => state.mail.receivedMails);
   const sentMails = useSelector((state) => state.mail.sentMails);
-  const readCount = useSelector((state) => state.mail.readCount);
-  const unreadCount = useSelector((state) => state.mail.unreadCount);
+  const unreadCount = useSelector((state) => state.mail.unread);
+  const readCount = useSelector((state) => state.mail.read);
+  // const isRead = useSelector((state) => state.mail.isRead);
+  const lastReadMailId = useSelector((state) => state.mail.lastReadMailId);
+  
+
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -35,22 +34,15 @@ const Inbox = () => {
       )
       .then((response) => {
         const receivedMails = [];
-        // let readCountRes = 0;
+
         for (const key in response.data) {
           const mail = {
             id: key,
             ...response.data[key],
           };
           receivedMails.push(mail);
-          // if (mail.isRead) {
-          //   readCountRes++;
-          // }
         }
         dispatch(mailActions.addReceivedMail(receivedMails));
-        // dispatch(mailActions.setReadCount(readCountRes));
-        // dispatch(
-        //   mailActions.setUnreadCount(receivedMails.length - readCountRes)
-        // );
       })
       .catch((error) => console.log(error));
 
@@ -76,65 +68,18 @@ const Inbox = () => {
       .catch((error) => console.log(error));
   }, [dispatch, email]);
 
-  useEffect(() => {
-    const storedReadCount = localStorage.getItem("readCount");
-    const storedUnreadCount = localStorage.getItem("unreadCount");
-    if (storedReadCount !== null && storedUnreadCount !== null) {
-      dispatch(mailActions.setReadCount(parseInt(storedReadCount)));
-      dispatch(mailActions.setUnreadCount(parseInt(storedUnreadCount)));
-    }
-  }, [dispatch]);
-
-  useEffect(() => {
-    localStorage.setItem("readCount", readCount);
-    localStorage.setItem("unreadCount", unreadCount);
-  }, [readCount, unreadCount]);
-
-  useEffect(() => {
-    const updateReadCounts = async () => {
-      try {
-        await axios.put(
-          `https://mailbox-sharpener-default-rtdb.firebaseio.com/${email.replace(
-            /[.@]/g,
-            ""
-          )}/read.json`,
-          {
-            readCount,
-            unreadCount,
-          }
-        );
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    updateReadCounts();
-  }, [email, readCount, unreadCount]);
-
-  useEffect(() => {
-    const getReadCounts = async () => {
-      try {
-        const response = await axios.get(
-          `https://mailbox-sharpener-default-rtdb.firebaseio.com/${email.replace(
-            /[.@]/g,
-            ""
-          )}/read.json`
-        );
-        dispatch(mailActions.setReadCount(response.data.readCount));
-        dispatch(mailActions.setUnreadCount(response.data.unreadCount));
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    getReadCounts();
-  }, [dispatch, email]);
-
   const history = useHistory();
 
   const handleMailClick = (mailId) => {
     const receivedMail = receivedMails.find((mail) => mail.id === mailId);
-    if (receivedMail) {
+    
+  
+
+    
+
+    if (receivedMail && lastReadMailId !== mailId) {
+      dispatch(mailActions.updateReceivedMailIsRead({ id: mailId, isRead: true }));
+      
       history.push({
         pathname: `/mail/${mailId}`,
         state: {
@@ -142,6 +87,7 @@ const Inbox = () => {
           subject: receivedMail.subject,
           body: receivedMail.body,
           type: "received",
+          isRead: true
         },
       });
     } else {
@@ -188,9 +134,7 @@ const Inbox = () => {
     }
   };
 
-  const READ_CLASS = "read";
-const UNREAD_CLASS = "unread";
-
+  
 
   return (
     <Tabs defaultActiveKey="received" id="inbox-tabs">
@@ -210,6 +154,7 @@ const UNREAD_CLASS = "unread";
           <Table striped bordered hover>
             <thead>
               <tr>
+                <th>Status</th>
                 <th>From</th>
                 <th>Subject</th>
                 <th>Body</th>
@@ -220,15 +165,14 @@ const UNREAD_CLASS = "unread";
               {receivedMails.map((mail) => (
                 <tr
                   key={mail.id}
-                  // className={mail.isRead ? READ_CLASS : UNREAD_CLASS}
                   style={{
                     cursor: "pointer",
                   }}
                   onClick={() => {
                     handleMailClick(mail.id);
-                    dispatch(mailActions.markMailAsRead(mail.id));
                   }}
                 >
+                  <td>Status</td>
                   <td>{mail.from}</td>
                   <td>{mail.subject}</td>
                   <td>{mail.body}</td>
