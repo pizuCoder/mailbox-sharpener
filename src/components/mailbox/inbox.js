@@ -15,11 +15,8 @@ const Inbox = () => {
   const email = useSelector((state) => state.auth.email);
   const receivedMails = useSelector((state) => state.mail.receivedMails);
   const sentMails = useSelector((state) => state.mail.sentMails);
-  const unreadCount = useSelector((state) => state.mail.unread);
-  const readCount = useSelector((state) => state.mail.read);
-  // const isRead = useSelector((state) => state.mail.isRead);
-  const lastReadMailId = useSelector((state) => state.mail.lastReadMailId);
-  
+
+  const [readCount, setReadCount] = useState(0);
 
   const dispatch = useDispatch();
 
@@ -43,6 +40,8 @@ const Inbox = () => {
           receivedMails.push(mail);
         }
         dispatch(mailActions.addReceivedMail(receivedMails));
+        const readMails = receivedMails.filter((mail) => mail.isRead);
+        setReadCount(readMails.length); //
       })
       .catch((error) => console.log(error));
 
@@ -72,14 +71,22 @@ const Inbox = () => {
 
   const handleMailClick = (mailId) => {
     const receivedMail = receivedMails.find((mail) => mail.id === mailId);
-    
-  
 
-    
-
-    if (receivedMail && lastReadMailId !== mailId) {
-      dispatch(mailActions.updateReceivedMailIsRead({ id: mailId, isRead: true }));
-      
+    if (receivedMail) {
+      axios
+        .put(
+          `https://mailbox-sharpener-default-rtdb.firebaseio.com/${email.replace(
+            /[.@]/g,
+            ""
+          )}/receivedMails/${mailId}/isRead.json`,
+          true // Set isRead to true
+        )
+        .then((response) => {
+          dispatch(mailActions.markMailasRead(mailId));
+          // Increment readCount by 1
+          setReadCount((prevReadCount) => prevReadCount + 1);
+        })
+        .catch((error) => console.log(error));
       history.push({
         pathname: `/mail/${mailId}`,
         state: {
@@ -87,7 +94,6 @@ const Inbox = () => {
           subject: receivedMail.subject,
           body: receivedMail.body,
           type: "received",
-          isRead: true
         },
       });
     } else {
@@ -134,8 +140,6 @@ const Inbox = () => {
     }
   };
 
-  
-
   return (
     <Tabs defaultActiveKey="received" id="inbox-tabs">
       <Tab eventKey="received" title="Received">
@@ -145,7 +149,7 @@ const Inbox = () => {
             <Badge variant="secondary" className="mr-2">
               Read:{readCount}
             </Badge>
-            <Badge variant="info">Unread: {unreadCount} </Badge>
+            <Badge variant="info">Unread: {receivedMails.length - readCount} </Badge>
           </div>
         </div>
         {receivedMails.length === 0 ? (
@@ -158,7 +162,7 @@ const Inbox = () => {
                 <th>From</th>
                 <th>Subject</th>
                 <th>Body</th>
-                <th></th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -172,7 +176,9 @@ const Inbox = () => {
                     handleMailClick(mail.id);
                   }}
                 >
-                  <td>Status</td>
+                  <td>
+                    <Badge bg="primary">{mail.isRead ? "": "Unread"}</Badge>
+                  </td>
                   <td>{mail.from}</td>
                   <td>{mail.subject}</td>
                   <td>{mail.body}</td>
