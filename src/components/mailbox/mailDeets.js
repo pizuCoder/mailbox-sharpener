@@ -14,19 +14,22 @@ export default function MailDeets() {
   
   
   return (
-    <div>
-      <Button onClick={() => {
-        history.replace("/welcome")
-    // console.log("readCount", isRead)
-    
-    // console.log("read: ", readCount)
-    // console.log("unread: ", unreadCount)
-  }
-    }>Back</Button>
-      {type === "received" && <p>From: {from}</p>}
-      {type === "sent" && <p>To: {to}</p>}
-      <p>Subject: {subject}</p>
-      <p>Body: {body}</p>
+    <div style={{ padding: "20px", backgroundColor: "#f5f5f5" }}>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          history.replace("/welcome");
+        }}
+        style={{ marginBottom: "20px" }}
+      >
+        Back
+      </Button>
+      <div style={{ backgroundColor: "white", padding: "20px" }}>
+        {type === "received" && <p style={{color: "black"}}>From: {from}</p>}
+        {type === "sent" && <p style={{color: "black"}}>To: {to}</p>}
+        <p style={{ fontWeight: "bold" , color: "black"}}>Subject: {subject}</p>
+        <p style={{ whiteSpace: "pre-wrap" , color: "black"}}>{body}</p>
+      </div>
     </div>
   );
 }
